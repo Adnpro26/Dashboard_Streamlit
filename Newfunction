@@ -1,0 +1,44 @@
+Indicators:
+
+  INDICATEUR_FINAL:
+    type: calc
+    label: "A - B + C"
+    dimensions: [Arrete, Annee, Type_valeur, Entity, Pays_Agg]
+    value: Valeur
+
+    formula:
+      expression: "A - B + C"
+      operands:
+        A: INDICATEUR_A
+        B: INDICATEUR_B
+        C: INDICATEUR_C
+
+
+def compute_expression_indicator(df, indicator_name, cfg):
+    dims = cfg["dimensions"]
+    expression = cfg["formula"]["expression"]
+    operands_map = cfg["formula"]["operands"]
+
+    # 1️⃣ Construire un dataframe pivoté
+    dfs = []
+    for alias, ind_name in operands_map.items():
+        temp = df[df["indicateur"] == ind_name].copy()
+        temp = temp[dims + ["valeur"]]
+        temp = temp.rename(columns={"valeur": alias})
+        dfs.append(temp)
+
+    # 2️⃣ Fusion progressive
+    from functools import reduce
+    merged = reduce(lambda left, right: left.merge(right, on=dims, how="outer"), dfs)
+
+    merged = merged.fillna(0)
+
+    # 3️⃣ Évaluation de l'expression
+    merged["valeur"] = merged.eval(expression)
+
+    # 4️⃣ Construction du résultat
+    result = merged[dims + ["valeur"]].copy()
+    result["indicateur"] = indicator_name
+    result["source"] = "Computed"
+
+    return result
