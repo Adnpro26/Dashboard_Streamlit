@@ -1,0 +1,57 @@
+# app.py (ou main.py)
+
+import sys
+import os
+from pathlib import Path
+
+# -----------------------------
+# Déterminer le chemin de base selon l'environnement
+# -----------------------------
+if getattr(sys, 'frozen', False):  # si c'est un exe PyInstaller
+    BASE_PATH = Path(sys._MEIPASS)  # PyInstaller décompresse tout ici
+else:  # si c'est du Python normal
+    BASE_PATH = Path(__file__).resolve().parent
+
+# -----------------------------
+# Ajouter le dossier src aux modules importables
+# -----------------------------
+SRC_PATH = BASE_PATH / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.append(str(SRC_PATH))
+
+# -----------------------------
+# Fonction pour accéder aux fichiers ressources (assets, config, logos, etc.)
+# -----------------------------
+def resource_path(relative_path: str) -> str:
+    """
+    Retourne le chemin complet vers un fichier, compatible PyInstaller.
+    """
+    return str(BASE_PATH / relative_path)
+
+# -----------------------------
+# IMPORTS INTERNES DU PROJET
+# -----------------------------
+from Reporting.Fonctionreporting import ma_fonction
+# Autres imports internes
+# from Reporting.AutreModule import ...
+
+# -----------------------------
+# IMPORTS EXTERNES
+# -----------------------------
+import openpyxl
+from PIL import Image, ImageTk
+# etc.
+
+
+
+config_file = resource_path("config/config.yaml")
+logo_file = resource_path("assets/logos/DCGCorpApp.ico")
+
+
+import yaml
+
+# Lire le fichier YAML
+with open(config_file, "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f)
+
+print(config)  # juste pour vérifier que ça fonctionne
