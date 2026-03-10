@@ -1,0 +1,123 @@
+"""
+Script : pyinstaller_exclude_complet.py
+Objectif :
+    - Analyse statique + runtime de tous les modules volumineux
+    - Force le chargement des modules en exécutant les fonctions clés
+    - Génère commande PyInstaller optimisée
+"""
+
+import ast
+import os
+import sys
+import importlib
+from importlib import import_module
+
+# -----------------------------
+# Paramètres
+# -----------------------------
+PROJECT_ROOT = r"C:\Users\a91337\PythonCardif313Projects\cardif_project\DCGCorpReport"
+APP_MODULE = "app"  # nom de ton fichier principal sans .py
+MODULES_VOLUMINEUX = ["pyarrow", "numpy", "pandas", "matplotlib", "scipy"]
+
+# -----------------------------
+# Fonctions clés à exécuter pour forcer le chargement des modules
+# (à adapter selon ton application)
+# -----------------------------
+def force_app_imports():
+    """
+    Importe ton app et appelle les fonctions principales pour charger tous les modules
+    """
+    try:
+        app_module = import_module(APP_MODULE)
+        if hasattr(app_module, "main"):
+            app_module.main()  # si tu as une fonction main()
+        # Sinon, tu peux instancier la classe principale et appeler quelques méthodes
+        if hasattr(app_module, "ReportingApp"):
+            app_instance = app_module.ReportingApp(None)  # root=None si possible
+            if hasattr(app_instance, "load_sample_csv"):
+                app_instance.load_sample_csv()
+            if hasattr(app_instance, "run_processing"):
+                app_instance.run_processing()
+    except Exception as e:
+        print(f"[WARNING] Erreur lors du forcing runtime : {e}")
+
+# -----------------------------
+# 1️⃣ Analyse statique des imports
+# -----------------------------
+static_imports = set()
+
+for root, dirs, files in os.walk(PROJECT_ROOT):
+    for file in files:
+        if file.endswith(".py"):
+            filepath = os.path.join(root, file)
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    tree = ast.parse(f.read(), filename=filepath)
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.Import):
+                            for n in node.names:
+                                for m in MODULES_VOLUMINEUX:
+                                    if n.name.startswith(m):
+                                        static_imports.add(n.name)
+                        elif isinstance(node, ast.ImportFrom):
+                            if node.module:
+                                for m in MODULES_VOLUMINEUX:
+                                    if node.module.startswith(m):
+                                        static_imports.add(node.module)
+            except Exception as e:
+                print(f"Erreur lecture {filepath}: {e}")
+
+print("\n[Analyse statique] Modules volumineux détectés :")
+for mod in sorted(static_imports):
+    print(mod)
+
+# -----------------------------
+# 2️⃣ Analyse runtime forcée
+# -----------------------------
+force_app_imports()
+
+runtime_imports = set()
+for mod in sys.modules:
+    for m in MODULES_VOLUMINEUX:
+        if mod.startswith(m):
+            runtime_imports.add(mod)
+
+print("\n[Analyse runtime] Modules réellement chargés :")
+for mod in sorted(runtime_imports):
+    print(mod)
+
+# -----------------------------
+# 3️⃣ Détection des modules à exclure
+# -----------------------------
+modules_a_exclure = static_imports - runtime_imports
+
+print("\nModules détectés comme non utilisés (à exclure) :")
+for mod in sorted(modules_a_exclure):
+    print(mod)
+
+# -----------------------------
+# 4️⃣ Génération commande PyInstaller
+# -----------------------------
+exclusions = [f"--exclude-module {mod}" for mod in modules_a_exclure]
+pyinstaller_cmd = f"pyinstaller {APP_MODULE}.py --onedir " + " ".join(exclusions)
+
+print("\nCommande PyInstaller optimisée :")
+print(pyinstaller_cmd)
+
+
+⚡ Comment l’utiliser
+Place ce fichier à la racine du projet.
+Modifie :
+PROJECT_ROOT → dossier racine du projet
+APP_MODULE → ton fichier principal (ex: app.py → "app")
+MODULES_VOLUMINEUX → tous les packages lourds que tu souhaites surveiller
+Vérifie que dans force_app_imports(), tu appelles les fonctions importantes pour que tous les modules de ton app soient effectivement chargés.
+Lance le script :
+Bash
+Copier le code
+python pyinstaller_exclude_complet.py
+Résultat :
+Liste statique des modules volumineux
+Modules réellement chargés à l’exécution
+Modules inutilisés détectés
+Commande PyInstaller prête avec --exclude-module pour alléger ton --onedir.
