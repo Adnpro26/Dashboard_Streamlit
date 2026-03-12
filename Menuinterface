@@ -1,0 +1,147 @@
+import tkinter as tk
+import ttkbootstrap as tb
+from ttkbootstrap.dialogs import Messagebox
+import pandas as pd
+
+
+class ReportingApp:
+
+    def __init__(self, root):
+
+        self.root = root
+        self.root.title("Reporting DCG")
+        self.root.geometry("1200x700")
+
+        # DataFrame agrégé
+        self.data_agg = pd.DataFrame()
+
+        # Construction interface
+        self.build_menu()
+        self.build_ui()
+
+
+    # ===============================
+    # MENU SUPERIEUR
+    # ===============================
+
+    def build_menu(self):
+
+        menubar = tk.Menu(self.root)
+
+        # ----- FILE -----
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Exporter résultats", command=self.export_results)
+        file_menu.add_separator()
+        file_menu.add_command(label="Quitter", command=self.root.quit)
+
+        menubar.add_cascade(label="File", menu=file_menu)
+
+        # ----- DATA -----
+        data_menu = tk.Menu(menubar, tearoff=0)
+        data_menu.add_command(label="Data Explorer", command=self.open_data_explorer)
+
+        menubar.add_cascade(label="Data", menu=data_menu)
+
+        # ----- HELP -----
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="About", command=self.show_about)
+
+        menubar.add_cascade(label="Help", menu=help_menu)
+
+        self.root.config(menu=menubar)
+
+
+    # ===============================
+    # INTERFACE PRINCIPALE
+    # ===============================
+
+    def build_ui(self):
+
+        self.main_frame = tb.Frame(self.root)
+        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.actions_frame = tb.Frame(self.main_frame)
+        self.actions_frame.pack(fill="x", pady=10)
+
+        # Simulation
+        self.btn_simulation = tb.Button(
+            self.actions_frame,
+            text="Simulation",
+            bootstyle="primary",
+            command=self.run_simulation
+        )
+        self.btn_simulation.pack(side="left", padx=5)
+
+        # Production
+        self.btn_production = tb.Button(
+            self.actions_frame,
+            text="Production",
+            bootstyle="success",
+            command=self.run_production
+        )
+        self.btn_production.pack(side="left", padx=5)
+
+        # Data Explorer
+        self.btn_explore = tb.Button(
+            self.actions_frame,
+            text="Explorer données",
+            bootstyle="info",
+            command=self.open_data_explorer
+        )
+        self.btn_explore.pack(side="left", padx=5)
+
+
+    # ===============================
+    # ACTIONS
+    # ===============================
+
+    def open_data_explorer(self):
+
+        if self.data_agg is None or self.data_agg.empty:
+
+            Messagebox.show_warning(
+                "Aucune donnée",
+                "Veuillez lancer un traitement avant d'explorer les données."
+            )
+
+            return
+
+        from src.ui.data_explorer import DataExplorer
+
+        DataExplorer(self.root, self.data_agg)
+
+
+    def run_simulation(self):
+
+        print("Simulation lancée")
+
+
+    def run_production(self):
+
+        print("Production lancée")
+
+
+    def export_results(self):
+
+        Messagebox.show_info("Export", "Fonction export à implémenter")
+
+
+    def show_about(self):
+
+        Messagebox.show_info(
+            "About",
+            "Reporting DCG\nVersion 1.0"
+        )
+
+
+# ===============================
+# LANCEMENT APPLICATION
+# ===============================
+
+if __name__ == "__main__":
+
+    app = tb.Window(themename="flatly")
+
+    ReportingApp(app)
+
+    app.mainloop()
