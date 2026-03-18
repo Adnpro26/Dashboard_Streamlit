@@ -1,0 +1,50 @@
+delta:
+  effet_scope:
+    dimension: period
+    from: "Q4 2024 Change actuel"
+    to: "Q4 2024 Change constant"
+
+
+
+def compute_delta_from_yaml(data_indexed, rule, pays, norme, indicateur):
+
+    key_from = (rule["from"], pays, norme, indicateur)
+    key_to = (rule["to"], pays, norme, indicateur)
+
+    val_from = data_indexed.get(key_from, 0)
+    val_to = data_indexed.get(key_to, 0)
+
+    return val_to - val_from
+
+
+
+rule = {
+    "from": "Q4 2024 Change actuel",
+    "to": "Q4 2024 Change constant",
+    "niveaux": ["OPERATIONNEL", "ONEOFF"]
+}
+
+
+data_indexed = {
+    ("Q4 2024 Change actuel", "FR", "IFRS", "CA", "resultat"): X,
+    ("Q4 2024 Change constant", "FR", "IFRS", "CA", "resultat"): Y,
+    
+    ("Q4 2024 Change actuel", "FR", "IFRS", "CA", "exceptionnel"): x,
+    ("Q4 2024 Change constant", "FR", "IFRS", "CA", "exceptionnel"): y,
+}
+
+
+def compute_effet_scope_total(data_indexed, rule, pays, norme, indicateur):
+    total_delta = 0
+    
+    for niveau in rule["niveaux"]:
+        key_from = (rule["from"], pays, norme, indicateur, niveau)
+        key_to   = (rule["to"],   pays, norme, indicateur, niveau)
+        
+        val_from = data_indexed.get(key_from, 0)
+        val_to   = data_indexed.get(key_to, 0)
+        
+        total_delta += val_to - val_from
+    
+    return total_delta
+
