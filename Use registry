@@ -1,0 +1,40 @@
+# config/registry.py
+
+from utils.TranscoManagerFunc import TranscoManager
+
+_transco_manager = None
+
+
+def init_transco(config_path):
+    global _transco_manager
+    
+    _transco_manager = TranscoManager(config_path)
+    _transco_manager.load()
+
+
+def get_transco():
+    if _transco_manager is None:
+        raise ValueError("Transco non initialisé")
+    return _transco_manager
+
+
+def get_list(name):
+    return get_transco().config["lists"].get(name)
+
+
+Étape 2 — initialisation dans app.py
+Python
+from config.registry import init_transco
+
+config_file = resource_path("config/config.yaml")
+
+init_transco(config_file)
+
+
+Étape 3 — utilisation partout
+Dans n’importe quel fichier (code.py, services.py, etc.) :
+Python
+from config.registry import get_list
+
+liste_entite = get_list("List_Entity")
+liste_indicateur = get_list("List_Indicator")
