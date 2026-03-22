@@ -1,0 +1,50 @@
+def update_config_value(name, new_values, mode="update"):
+    """
+    Met à jour une liste ou un dictionnaire dans config["lists"].
+
+    mode:
+        - "replace" → remplace complètement
+        - "update"  → merge (list ou dict)
+    """
+    transco = get_transco()
+
+    if "lists" not in transco.config:
+        transco.config["lists"] = {}
+
+    current = transco.config["lists"].get(name)
+
+    # 🔹 Cas 1 : n'existe pas encore
+    if current is None:
+        transco.config["lists"][name] = new_values
+        return
+
+    # 🔹 Cas 2 : LISTE
+    if isinstance(current, list):
+        if not isinstance(new_values, list):
+            raise ValueError("new_values doit être une liste")
+
+        if mode == "replace":
+            transco.config["lists"][name] = new_values
+
+        elif mode == "update":
+            # fusion sans doublons en gardant l'ordre
+            result = current.copy()
+            for v in new_values:
+                if v not in result:
+                    result.append(v)
+            transco.config["lists"][name] = result
+
+    # 🔹 Cas 3 : DICTIONNAIRE
+    elif isinstance(current, dict):
+        if not isinstance(new_values, dict):
+            raise ValueError("new_values doit être un dictionnaire")
+
+        if mode == "replace":
+            transco.config["lists"][name] = new_values
+
+        elif mode == "update":
+            current.update(new_values)
+            transco.config["lists"][name] = current
+
+    else:
+        raise TypeError(f"Type non supporté pour {name}")
